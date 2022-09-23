@@ -104,6 +104,7 @@ type List struct {
 	id             string
 	rooms          []string
 	deletedIndexes map[int]struct{}
+	history        []string
 }
 
 func NewList(id string) *List {
@@ -120,6 +121,7 @@ func (l *List) Sync(roomIDs []string, start, end int) {
 	}
 	l.rooms = roomIDs
 	// TODO: handle start/end
+	l.history = append(l.history, fmt.Sprintf("SYNC %v %v %v %v ;", l.id, start, end, roomIDs))
 }
 
 func (l *List) Delete(index int) {
@@ -129,6 +131,7 @@ func (l *List) Delete(index int) {
 	}
 	l.rooms[index] = DELETED
 	l.deletedIndexes[index] = struct{}{}
+	l.history = append(l.history, fmt.Sprintf("DELETE %v %v ;", l.id, index))
 }
 
 func (l *List) Insert(index int, roomID string) {
@@ -160,17 +163,19 @@ func (l *List) Insert(index int, roomID string) {
 	}
 
 	l.rooms[index] = roomID
+	l.history = append(l.history, fmt.Sprintf("INSERT %v %v %v ;", l.id, index, roomID))
 }
 
-func (l *List) DuplicateCheck() {
+func (l *List) DuplicateCheck() error {
 	set := make(map[string]int)
 	for i, roomID := range l.rooms {
 		j, exists := set[roomID]
 		if exists {
-			fmt.Printf("List %v: room %v exists at both i=%v and i=%v\n", l.id, roomID, i, j)
+			return fmt.Errorf("list %v: room %v exists at both i=%v and i=%v", l.id, roomID, i, j)
 		}
 		set[roomID] = i
 	}
+	return nil
 }
 
 func toInt(s string) int {
@@ -212,6 +217,11 @@ func main() {
 		case "INSERT":
 			l.Insert(toInt(op.Index), op.RoomID)
 		}
-		l.DuplicateCheck()
+		if err := l.DuplicateCheck(); err != nil {
+			for _, h := range l.history {
+				fmt.Println(h)
+			}
+			fmt.Println(err.Error())
+		}
 	}
 }
