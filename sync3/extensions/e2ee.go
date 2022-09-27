@@ -16,7 +16,7 @@ func (r E2EERequest) ApplyDelta(next *E2EERequest) *E2EERequest {
 
 // Server response
 type E2EEResponse struct {
-	OTKCounts        map[string]int  `json:"device_one_time_keys_count"`
+	OTKCounts        map[string]int  `json:"device_one_time_keys_count,omitempty"`
 	DeviceLists      *E2EEDeviceList `json:"device_lists,omitempty"`
 	FallbackKeyTypes []string        `json:"device_unused_fallback_key_types,omitempty"`
 }
